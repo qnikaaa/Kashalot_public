@@ -37,21 +37,37 @@ export async function fetchScooters(): Promise<Scooter[]> {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        const scooters: Scooter[] = results.data.map((row) => ({
-          id: parseInt(row['id'] ?? '0', 10),
-          qr: row['qr']?.trim() ?? '',
-          latitude: parseCoord(row['latitude']),
-          longitude: parseCoord(row['longitude']),
-          fuelPercent: parsePercent(row['fuel_percent']),
-          statusGroup: row['status_group']?.trim() ?? '',
-          online: row['online']?.trim() === 'Да',
-          color: row['color']?.trim() ?? '',
-          company: row['company']?.trim() ?? '',
-          geozone: row['geozone']?.trim() ?? '',
-          updated: row['updated']?.trim() ?? '',
-          // Сохраняем все остальные поля на случай расширения API
-          ...row,
-        }))
+        const scooters: Scooter[] = results.data
+          .map((row) => {
+            const latitude = parseCoord(row['latitude'])
+            const longitude = parseCoord(row['longitude'])
+
+            return {
+              // Сначала сохраняем сырые поля
+              ...row,
+
+              // Потом поверх них кладём нормализованные поля для приложения
+              id: parseInt(row['id'] ?? '0', 10) || 0,
+              qr: row['qr']?.trim() ?? '',
+              model: row['model']?.trim() ?? '',
+              latitude,
+              longitude,
+              fuelPercent: parsePercent(row['fuel_percent']),
+              statusGroup: row['status_group']?.trim() ?? '',
+              online: row['online']?.trim() === 'Да',
+              color: row['color']?.trim() ?? '',
+              company: row['company']?.trim() ?? '',
+              geozone: row['geozone']?.trim() ?? '',
+              updated: row['updated']?.trim() ?? '',
+            } as Scooter
+          })
+          .filter((scooter) =>
+            scooter.id > 0 &&
+            scooter.latitude !== 0 &&
+            scooter.longitude !== 0
+          )
+
+        console.log(`Loaded scooters with coordinates: ${scooters.length}`)
         resolve(scooters)
       },
       error: (err: Error) => reject(err),
