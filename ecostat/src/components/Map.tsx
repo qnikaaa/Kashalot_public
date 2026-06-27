@@ -37,7 +37,7 @@ export function Map({ scooters, userPosition, selectedScooter, route, onScooterC
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
   const routeLayerRef = useRef<L.Polyline | null>(null)
-  const markersRef = useRef<Map<number, L.Marker>>(new Map())
+  const markersRef = useRef<globalThis.Map<number, L.Marker>>(new globalThis.Map())
 
   // Инициализация карты
   useEffect(() => {
