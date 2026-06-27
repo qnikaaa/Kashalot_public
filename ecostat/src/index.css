@@ -1,0 +1,448 @@
+/* ── Базовые переменные ─────────────────────────────────── */
+:root {
+  --bg:          #0a0a0f;
+  --surface:     #13131a;
+  --surface2:    #1c1c27;
+  --border:      #2a2a3a;
+  --text:        #f0f0f8;
+  --text-muted:  #7070a0;
+  --accent:      #4fd1c5;
+  --accent-dim:  #4fd1c522;
+  --danger:      #f87171;
+  --warning:     #fbbf24;
+  --radius:      16px;
+  --radius-sm:   10px;
+  --shadow:      0 8px 32px rgba(0,0,0,0.5);
+  --transition:  0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Сброс и базовые стили ──────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Leaflet карта ──────────────────────────────────────── */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #0d0d1a;
+}
+
+/* Кастомные тайлы — делаем карту тёмной */
+.leaflet-tile {
+  filter: brightness(0.7) saturate(0.4) hue-rotate(200deg);
+}
+
+/* ── Маркер кашалота ────────────────────────────────────── */
+.whale-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.15);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+}
+
+.whale-marker:hover,
+.whale-marker.active {
+  transform: scale(1.2);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  z-index: 1000 !important;
+}
+
+.whale-marker svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Кластер */
+.marker-cluster-custom {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  box-shadow: 0 2px 12px rgba(79, 209, 197, 0.3);
+}
+
+/* ── Layout ─────────────────────────────────────────────── */
+.app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.map-container {
+  position: absolute;
+  inset: 0;
+}
+
+/* ── Верхняя панель ─────────────────────────────────────── */
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 16px 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.top-bar > * { pointer-events: all; }
+
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+}
+
+.app-logo span {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+
+.scooter-count {
+  margin-left: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+}
+
+.scooter-count strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── Кнопка "моё местоположение" ───────────────────────── */
+.locate-btn {
+  position: absolute;
+  right: 16px;
+  bottom: 200px;
+  z-index: 1000;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+  transition: transform var(--transition), background var(--transition);
+  backdrop-filter: blur(12px);
+}
+
+.locate-btn:hover { background: var(--surface2); transform: scale(1.05); }
+.locate-btn:active { transform: scale(0.95); }
+
+/* ── Bottom Sheet (карточка кашалота) ───────────────────── */
+.bottom-sheet-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.bottom-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  border-top: 1px solid var(--border);
+  padding: 12px 20px 32px;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+  pointer-events: all;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.sheet-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition);
+}
+
+.sheet-close:hover { background: var(--border); color: var(--text); }
+
+/* Заголовок карточки */
+.sheet-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.sheet-whale-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sheet-whale-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.sheet-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.sheet-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Инфо-строки */
+.sheet-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.info-chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.info-chip-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-chip-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Предупреждение о детском режиме */
+.child-mode-warning {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--warning);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* QR-блок */
+.qr-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.qr-block strong {
+  color: var(--text);
+  font-size: 15px;
+}
+
+/* Кнопки */
+.sheet-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 16px;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--accent);
+  color: #0a0a0f;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity var(--transition), transform var(--transition);
+  letter-spacing: -0.2px;
+}
+
+.btn-primary:hover { opacity: 0.9; }
+.btn-primary:active { transform: scale(0.98); opacity: 0.85; }
+
+.btn-secondary {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.btn-secondary:hover { background: var(--surface2); }
+
+.nav-apps {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-apps .btn-secondary {
+  flex: 1;
+  padding: 12px 8px;
+  font-size: 12px;
+}
+
+/* ── Уведомления ────────────────────────────────────────── */
+.notification {
+  position: absolute;
+  top: 80px;
+  left: 16px;
+  right: 16px;
+  z-index: 3000;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notification.danger { border-color: var(--danger); }
+.notification.warning { border-color: var(--warning); }
+
+.notification-icon { font-size: 20px; flex-shrink: 0; }
+.notification-text { font-size: 14px; line-height: 1.4; color: var(--text); }
+.notification-text strong { display: block; margin-bottom: 2px; }
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+/* ── Экран загрузки ─────────────────────────────────────── */
+.loading-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 9000;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.loading-screen .whale { font-size: 48px; animation: pulse 1.5s ease-in-out infinite; }
+.loading-screen p { font-size: 15px; color: var(--text-muted); }
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ── Экран ошибки ───────────────────────────────────────── */
+.error-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 9000;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+}
+
+.error-screen p { color: var(--text-muted); font-size: 14px; line-height: 1.5; }
+.error-screen .btn-primary { margin-top: 8px; width: auto; padding: 14px 32px; }
