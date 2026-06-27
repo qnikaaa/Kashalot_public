@@ -46,20 +46,13 @@ export function Map({ scooters, userPosition, selectedScooter, route, onScooterC
     const map = L.map(containerRef.current, {
       center: [55.75, 37.61], // Москва по умолчанию
       zoom: 13,
-      zoomControl: false,      // Убираем стандартный (добавим свой ниже — в правом нижнем углу)
+      zoomControl: false,
       attributionControl: false,
-      touchZoom: true,         // Pinch-to-zoom на мобильных
-      scrollWheelZoom: true,   // Колёсико мыши на десктопе
-      doubleClickZoom: true,   // Двойной тап/клик
     })
 
-    // Кнопки зума — правый нижний угол, над кнопкой геолокации
-    L.control.zoom({ position: 'bottomright' }).addTo(map)
-
-    // Цветная карта — мягкая, приятная палитра (Stadia Alidade Smooth)
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
-      maxZoom: 20,
-      attribution: '© Stadia Maps',
+    // Тёмная тема карты (OpenStreetMap через CartoDB)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
     }).addTo(map)
 
     // Кластер маркеров
