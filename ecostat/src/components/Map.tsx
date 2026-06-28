@@ -55,10 +55,10 @@ export function Map({ scooters, userPosition, selectedScooter, route, onScooterC
 
     L.control.zoom({ position: 'bottomright' }).addTo(map)
 
-    // Цветная карта — мягкая, приятная палитра (Stadia Alidade Smooth)
-    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
+    // Светлая карта без ключей доступа, чтобы Vercel не показывал 401 на тайлах.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20,
-      attribution: '© Stadia Maps',
+      attribution: '© OpenStreetMap contributors © CARTO',
     }).addTo(map)
 
     // Кластер маркеров
