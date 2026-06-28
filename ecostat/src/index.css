@@ -1,18 +1,20 @@
 /* ── Базовые переменные ─────────────────────────────────── */
 :root {
-  --bg:          #0a0a0f;
-  --surface:     #13131a;
-  --surface2:    #1c1c27;
-  --border:      #2a2a3a;
-  --text:        #f0f0f8;
-  --text-muted:  #7070a0;
+  --bg:          #f3f6ff;
+  --surface:     rgba(255, 255, 255, 0.9);
+  --surface2:    #f5f2ff;
+  --border:      rgba(139, 92, 246, 0.16);
+  --text:        #171827;
+  --text-muted:  #777299;
   --accent:      #4fd1c5;
   --accent-dim:  #4fd1c522;
+  --peach:       #ffc5a8;
+  --violet:      #a78bfa;
   --danger:      #f87171;
   --warning:     #fbbf24;
   --radius:      16px;
   --radius-sm:   10px;
-  --shadow:      0 8px 32px rgba(0,0,0,0.5);
+  --shadow:      0 12px 34px rgba(66, 52, 111, 0.18);
   --transition:  0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -55,7 +57,7 @@ html, body, #root {
   height: 44px !important;
   line-height: 44px !important;
   background: var(--surface) !important;
-  color: var(--text) !important;
+  color: #171827 !important;
   border: 1px solid var(--border) !important;
   font-size: 20px !important;
   font-weight: 400 !important;
@@ -82,8 +84,8 @@ html, body, #root {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
   border: 2.5px solid rgba(255,255,255,0.15);
   backdrop-filter: blur(4px);
@@ -100,13 +102,13 @@ html, body, #root {
 }
 
 .whale-marker svg {
-  width: 26px;
-  height: 26px;
+  width: 34px;
+  height: 34px;
 }
 
 /* Кластер */
 .marker-cluster-custom {
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.94);
   border: 2px solid var(--accent);
   border-radius: 50%;
   display: flex;
@@ -149,8 +151,8 @@ html, body, #root {
 .app-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: var(--surface);
+  gap: 9px;
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 10px 14px;
@@ -167,7 +169,7 @@ html, body, #root {
 
 .scooter-count {
   margin-left: auto;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 10px 14px;
@@ -221,12 +223,13 @@ html, body, #root {
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--surface);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(246,244,255,0.98) 100%);
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   border-top: 1px solid var(--border);
   padding: 12px 20px 32px;
-  box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+  box-shadow: 0 -10px 42px rgba(72, 54, 125, 0.22);
   pointer-events: all;
   animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   max-height: 85vh;
@@ -241,7 +244,7 @@ html, body, #root {
 .sheet-handle {
   width: 36px;
   height: 4px;
-  background: var(--border);
+  background: rgba(139, 92, 246, 0.28);
   border-radius: 2px;
   margin: 0 auto 16px;
 }
@@ -253,7 +256,7 @@ html, body, #root {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--surface2);
+  background: rgba(139, 92, 246, 0.08);
   border: none;
   color: var(--text-muted);
   font-size: 16px;
@@ -277,7 +280,7 @@ html, body, #root {
 .sheet-whale-icon {
   width: 52px;
   height: 52px;
-  border-radius: 14px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -306,18 +309,18 @@ html, body, #root {
 .sheet-info {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
 .info-chip {
-  background: var(--surface2);
+  background: #fff7f1;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 10px 12px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
 }
 
 .info-chip-label {
@@ -328,7 +331,7 @@ html, body, #root {
 }
 
 .info-chip-value {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text);
 }
@@ -349,19 +352,36 @@ html, body, #root {
 
 /* QR-блок */
 .qr-block {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  font-size: 13px;
-  color: var(--text-muted);
+  background: linear-gradient(135deg, #ffe3d4 0%, #efe3ff 100%);
+  border: 1px solid rgba(167, 139, 250, 0.24);
+  border-radius: 18px;
+  padding: 16px;
+  font-size: 14px;
+  color: var(--text);
   margin-bottom: 16px;
-  line-height: 1.5;
+  line-height: 1.35;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.qr-block-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
 }
 
 .qr-block strong {
   color: var(--text);
-  font-size: 15px;
+  font-size: 18px;
+  letter-spacing: -0.2px;
+}
+
+.qr-block span:last-child {
+  color: var(--text-muted);
+  font-weight: 700;
 }
 
 /* Кнопки */
@@ -372,6 +392,7 @@ html, body, #root {
 }
 
 .btn-primary {
+  display: block;
   width: 100%;
   padding: 16px;
   border-radius: var(--radius);
@@ -383,6 +404,8 @@ html, body, #root {
   cursor: pointer;
   transition: opacity var(--transition), transform var(--transition);
   letter-spacing: -0.2px;
+  text-align: center;
+  text-decoration: none;
 }
 
 .btn-primary:hover { opacity: 0.9; }
@@ -393,7 +416,7 @@ html, body, #root {
   padding: 14px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.72);
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
@@ -403,9 +426,23 @@ html, body, #root {
 
 .btn-secondary:hover { background: var(--surface2); }
 
+.btn-link {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  padding: 4px 8px;
+}
+
+.btn-link:hover {
+  color: var(--violet);
+}
+
 .nav-apps {
   display: flex;
   gap: 8px;
+  animation: slideUp 140ms ease-out;
 }
 
 .nav-apps .btn-secondary {

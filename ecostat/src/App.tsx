@@ -26,6 +26,7 @@ export default function App() {
   const [route, setRoute] = useState<Route | null>(null)
   const [notification, setNotification] = useState<string | null>(null)
   const [locating, setLocating] = useState(false)
+  const [visibleScooterCount, setVisibleScooterCount] = useState<number | null>(null)
 
   // Показать уведомление на 4 секунды
   const showNotification = useCallback((msg: string) => {
@@ -107,6 +108,7 @@ export default function App() {
         selectedScooter={selectedScooter}
         route={route}
         onScooterClick={handleScooterClick}
+        onVisibleCountChange={setVisibleScooterCount}
       />
 
       {/* Верхняя панель */}
@@ -116,7 +118,7 @@ export default function App() {
           <span>Экоскат</span>
         </div>
         <div className="scooter-count">
-          <strong>{scooters.length}</strong> доступно
+          <strong>{visibleScooterCount ?? 0}</strong> рядом
         </div>
       </div>
 

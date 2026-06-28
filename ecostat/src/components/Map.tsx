@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
@@ -15,6 +15,7 @@ interface MapProps {
   selectedScooter: Scooter | null
   route: Route | null
   onScooterClick: (scooter: Scooter) => void
+  onVisibleCountChange?: (count: number) => void
 }
 
 // Иконка пользователя
@@ -31,13 +32,32 @@ const USER_ICON = L.divIcon({
   className: '',
 })
 
-export function Map({ scooters, userPosition, selectedScooter, route, onScooterClick }: MapProps) {
+export function Map({
+  scooters,
+  userPosition,
+  selectedScooter,
+  route,
+  onScooterClick,
+  onVisibleCountChange,
+}: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
   const routeLayerRef = useRef<L.Polyline | null>(null)
   const markersRef = useRef<globalThis.Map<number, L.Marker>>(new globalThis.Map())
+  const initialLocationFitRef = useRef(false)
+
+  const updateVisibleCount = useCallback(() => {
+    const map = mapRef.current
+    if (!map || !onVisibleCountChange) return
+
+    const bounds = map.getBounds()
+    const count = scooters.filter((scooter) =>
+      bounds.contains([scooter.latitude, scooter.longitude])
+    ).length
+    onVisibleCountChange(count)
+  }, [scooters, onVisibleCountChange])
 
   // Инициализация карты
   useEffect(() => {
@@ -64,7 +84,8 @@ export function Map({ scooters, userPosition, selectedScooter, route, onScooterC
     // Кластер маркеров
     const cluster = (L as unknown as { markerClusterGroup: (opts: object) => L.MarkerClusterGroup })
       .markerClusterGroup({
-        maxClusterRadius: 60,
+        maxClusterRadius: 34,
+        disableClusteringAtZoom: 15,
         spiderfyOnMaxZoom: true,
         showCoverageOnHover: false,
         iconCreateFunction: (c: L.MarkerCluster) => {
@@ -85,6 +106,19 @@ export function Map({ scooters, userPosition, selectedScooter, route, onScooterC
     return () => { map.remove(); mapRef.current = null }
   }, [])
 
+  // Счётчик кашалотов именно в текущей области карты, а не всего парка.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    map.on('moveend zoomend', updateVisibleCount)
+    updateVisibleCount()
+
+    return () => {
+      map.off('moveend zoomend', updateVisibleCount)
+    }
+  }, [updateVisibleCount])
+
   // Обновление маркеров кашалотов
   useEffect(() => {
     const cluster = clusterRef.current
@@ -95,12 +129,12 @@ export function Map({ scooters, userPosition, selectedScooter, route, onScooterC
 
     scooters.forEach((scooter) => {
       const color = getScooterColor(scooter.color)
-      const svgHtml = renderToStaticMarkup(<WhaleIcon color={color} size={26} />)
+      const svgHtml = renderToStaticMarkup(<WhaleIcon color={color} size={34} />)
 
       const icon = L.divIcon({
         html: `<div class="whale-marker" style="background:${color}22;border-color:${color}55">${svgHtml}</div>`,
-        iconSize: [44, 44],
-        iconAnchor: [22, 22],
+        iconSize: [54, 54],
+        iconAnchor: [27, 27],
         className: '',
       })
 
@@ -137,10 +171,13 @@ export function Map({ scooters, userPosition, selectedScooter, route, onScooterC
         icon: USER_ICON,
         zIndexOffset: 1000,
       }).addTo(mapRef.current)
-      // При первом определении — центрируем карту
-      mapRef.current.setView([userPosition.lat, userPosition.lng], 15, { animate: true })
     } else {
       userMarkerRef.current.setLatLng([userPosition.lat, userPosition.lng])
+    }
+
+    if (!initialLocationFitRef.current) {
+      initialLocationFitRef.current = true
+      mapRef.current.setView([userPosition.lat, userPosition.lng], 16, { animate: true })
     }
   }, [userPosition])
 

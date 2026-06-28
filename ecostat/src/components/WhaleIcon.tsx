@@ -3,48 +3,71 @@ interface WhaleIconProps {
   size?: number
 }
 
-/** SVG-иконка кашалота, окрашенная в цвет самоката */
+/** Легкий SVG-силуэт кашалота-техники, окрашенный в цвет конкретной модели */
 export function WhaleIcon({ color, size = 28 }: WhaleIconProps) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 96 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Тело кашалота */}
-      <ellipse cx="30" cy="34" rx="22" ry="14" fill={color} />
-      {/* Голова — характерный квадратный лоб кашалота */}
-      <rect x="6" y="24" width="18" height="18" rx="6" fill={color} />
-      {/* Хвост */}
+      <defs>
+        <radialGradient id="headlightGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FFF7B8" stopOpacity="0.95" />
+          <stop offset="55%" stopColor="#FDE68A" stopOpacity="0.45" />
+          <stop offset="100%" stopColor="#FDE68A" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* Мягкое свечение фары */}
+      <circle cx="16" cy="32" r="13" fill="url(#headlightGlow)" />
+
+      {/* Платформа-поплавок */}
       <path
-        d="M50 30 C56 24 62 20 62 28 C62 34 56 36 50 34Z"
+        d="M14 39 C27 49 62 49 80 39 C75 53 28 56 12 45 C10 43 11 40 14 39Z"
         fill={color}
-        opacity="0.85"
+        opacity="0.7"
       />
+
+      {/* Корпус */}
       <path
-        d="M50 38 C56 44 62 46 62 38 C62 32 56 32 50 34Z"
+        d="M19 25 H65 C74 25 82 32 84 40 C68 48 35 49 15 39 C12 34 14 28 19 25Z"
         fill={color}
-        opacity="0.85"
       />
-      {/* Плавник */}
+
+      {/* Нос и фара */}
+      <path d="M16 29 C10 31 9 37 15 40 C19 37 19 32 16 29Z" fill={color} opacity="0.85" />
+      <circle cx="16" cy="33" r="3.2" fill="#FFF7B8" />
+      <circle cx="16" cy="33" r="1.7" fill="#FFFFFF" />
+
+      {/* Сиденье */}
+      <rect x="47" y="18" width="20" height="8" rx="4" fill="#15151F" />
+      <rect x="50" y="14" width="14" height="5" rx="2.5" fill="#15151F" opacity="0.85" />
+
+      {/* Черный руль */}
       <path
-        d="M32 22 C34 16 40 14 42 20 L36 24Z"
-        fill={color}
-        opacity="0.8"
-      />
-      {/* Глаз */}
-      <circle cx="13" cy="33" r="2.5" fill="white" opacity="0.9" />
-      <circle cx="13" cy="33" r="1.2" fill="#0a0a0f" />
-      {/* Улыбка */}
-      <path
-        d="M10 40 Q16 44 22 40"
-        stroke="white"
-        strokeWidth="1.5"
+        d="M66 19 C70 10 78 10 82 17"
+        stroke="#15151F"
+        strokeWidth="5"
         strokeLinecap="round"
-        opacity="0.5"
-        fill="none"
+      />
+      <path
+        d="M79 16 H90"
+        stroke="#15151F"
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+
+      {/* Небольшие детали */}
+      <circle cx="30" cy="36" r="2.5" fill="#FFFFFF" opacity="0.45" />
+      <path
+        d="M28 42 C39 45 58 44 71 39"
+        stroke="#FFFFFF"
+        strokeWidth="3"
+        strokeLinecap="round"
+        opacity="0.35"
       />
     </svg>
   )

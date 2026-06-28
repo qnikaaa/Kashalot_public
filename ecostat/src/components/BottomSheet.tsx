@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Scooter, LatLng } from '../types'
 import { WhaleIcon } from './WhaleIcon'
 import { getScooterColor, getScooterColorLight } from '../utils/colors'
@@ -21,10 +22,17 @@ function openExternalRoute(app: 'google' | 'yandex' | '2gis', lat: number, lng: 
   window.open(urls[app], '_blank')
 }
 
+function getRentalUrl(qr: string) {
+  const qrNumber = qr.replace(/\D/g, '')
+  return `https://k-s.app/qr/${qrNumber}`
+}
+
 export function BottomSheet({ scooter, distanceMeters, onClose, onRoute }: BottomSheetProps) {
   const color = getScooterColor(scooter.color)
   const colorLight = getScooterColorLight(scooter.color)
   const childMode = isChildModeOnly(scooter)
+  const [showMapChoices, setShowMapChoices] = useState(false)
+  const rentalUrl = getRentalUrl(scooter.qr)
 
   return (
     <div className="bottom-sheet-overlay">
@@ -55,18 +63,10 @@ export function BottomSheet({ scooter, distanceMeters, onClose, onRoute }: Botto
             </span>
           </div>
           <div className="info-chip">
-            <span className="info-chip-label">Пешком</span>
+            <span className="info-chip-label">До кашалота</span>
             <span className="info-chip-value">
               {distanceMeters !== null ? walkingTime(distanceMeters) : '—'}
             </span>
-          </div>
-          <div className="info-chip">
-            <span className="info-chip-label">Статус</span>
-            <span className="info-chip-value" style={{ color: '#4fd1c5' }}>На линии</span>
-          </div>
-          <div className="info-chip">
-            <span className="info-chip-label">Обновлён</span>
-            <span className="info-chip-value" style={{ fontSize: 13 }}>{scooter.updated}</span>
           </div>
         </div>
 
@@ -80,8 +80,9 @@ export function BottomSheet({ scooter, distanceMeters, onClose, onRoute }: Botto
 
         {/* QR для аренды */}
         <div className="qr-block">
-          Для начала аренды отсканируйте QR-код с номером кашалота:<br />
-          <strong>{scooter.qr}</strong>
+          <span className="qr-block-label">Главное для старта</span>
+          <strong>Отсканируйте QR-код на кашалоте</strong>
+          <span>{scooter.qr}</span>
         </div>
 
         {/* Кнопки */}
@@ -90,26 +91,39 @@ export function BottomSheet({ scooter, distanceMeters, onClose, onRoute }: Botto
             🗺 Построить маршрут
           </button>
 
-          <div className="nav-apps">
-            <button
-              className="btn-secondary"
-              onClick={() => openExternalRoute('google', scooter.latitude, scooter.longitude)}
-            >
-              Google Maps
-            </button>
-            <button
-              className="btn-secondary"
-              onClick={() => openExternalRoute('yandex', scooter.latitude, scooter.longitude)}
-            >
-              Яндекс
-            </button>
-            <button
-              className="btn-secondary"
-              onClick={() => openExternalRoute('2gis', scooter.latitude, scooter.longitude)}
-            >
-              2ГИС
-            </button>
-          </div>
+          <button
+            className="btn-secondary"
+            onClick={() => setShowMapChoices((visible) => !visible)}
+          >
+            Открыть в картах
+          </button>
+
+          <a className="btn-link" href={rentalUrl} target="_blank" rel="noreferrer">
+            Если QR-код поврежден, открыть оплату по номеру
+          </a>
+
+          {showMapChoices && (
+            <div className="nav-apps">
+              <button
+                className="btn-secondary"
+                onClick={() => openExternalRoute('yandex', scooter.latitude, scooter.longitude)}
+              >
+                Яндекс
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => openExternalRoute('google', scooter.latitude, scooter.longitude)}
+              >
+                Google
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => openExternalRoute('2gis', scooter.latitude, scooter.longitude)}
+              >
+                2ГИС
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
