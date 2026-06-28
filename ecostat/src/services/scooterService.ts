@@ -17,21 +17,61 @@ export function normalizeQr(qr: string): string {
   return qr?.replace(/\s+/g, '') ?? ''
 }
 
-/**
- * Загружает и парсит CSV-файл с кашалотами.
- * Путь к файлу берётся из .env (VITE_SCOOTERS_CSV_URL),
- * по умолчанию — /scooters.csv в папке public.
- */
 export async function fetchScooters(): Promise<Scooter[]> {
-  const url = import.meta.env.VITE_SCOOTERS_CSV_URL ?? '/scooters.csv'
+  const apiUrl = import.meta.env.VITE_SCOOTERS_API_URL ?? (
+    import.meta.env.PROD ? '/api/scooters' : 'http://127.0.0.1:3001/api/scooters'
+  )
 
+  try {
+    return await fetchScootersJson(apiUrl)
+  } catch (error) {
+    console.warn('Live scooters API failed, falling back to CSV:', error)
+    return fetchScootersCsv()
+  }
+}
+
+async function fetchScootersJson(url: string): Promise<Scooter[]> {
   const response = await fetch(url)
   if (!response.ok) {
-    throw new Error(`Не удалось загрузить данные: ${response.status}`)
+    throw new Error(`Не удалось загрузить онлайн-данные: ${response.status}`)
+  }
+
+  const data = await response.json()
+  if (!Array.isArray(data)) {
+    throw new Error('Онлайн-данные пришли в неправильном формате')
+  }
+
+  return data
+    .map((row) => ({
+      ...row,
+      id: Number(row.id) || 0,
+      qr: String(row.qr ?? '').trim(),
+      model: String(row.model ?? '').trim(),
+      latitude: Number(row.latitude) || 0,
+      longitude: Number(row.longitude) || 0,
+      fuelPercent: Number(row.fuelPercent) || 0,
+      statusGroup: String(row.statusGroup ?? '').trim(),
+      online: Boolean(row.online),
+      color: String(row.color ?? '').trim(),
+      company: String(row.company ?? '').trim(),
+      geozone: String(row.geozone ?? '').trim(),
+      updated: String(row.updated ?? '').trim(),
+    } as Scooter))
+    .filter((scooter) =>
+      scooter.id > 0 &&
+      scooter.latitude !== 0 &&
+      scooter.longitude !== 0
+    )
+}
+
+async function fetchScootersCsv(): Promise<Scooter[]> {
+  const url = import.meta.env.VITE_SCOOTERS_CSV_URL ?? '/scooters.csv'
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`Не удалось загрузить CSV: ${response.status}`)
   }
 
   const text = await response.text()
-
   return new Promise((resolve, reject) => {
     Papa.parse<Record<string, string>>(text, {
       header: true,

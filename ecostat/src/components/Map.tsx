@@ -48,11 +48,17 @@ export function Map({ scooters, userPosition, selectedScooter, route, onScooterC
       zoom: 13,
       zoomControl: false,
       attributionControl: false,
+      touchZoom: true,
+      scrollWheelZoom: true,
+      doubleClickZoom: true,
     })
 
-    // Тёмная тема карты (OpenStreetMap через CartoDB)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
+    L.control.zoom({ position: 'bottomright' }).addTo(map)
+
+    // Цветная карта — мягкая, приятная палитра (Stadia Alidade Smooth)
+    L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
+      maxZoom: 20,
+      attribution: '© Stadia Maps',
     }).addTo(map)
 
     // Кластер маркеров
