@@ -14,6 +14,49 @@ export function useGeolocation(): UseGeolocationResult {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const testLat = Number(params.get('lat'))
+    const testLng = Number(params.get('lng'))
+    const demoWalk = params.has('demoWalk')
+
+    if (Number.isFinite(testLat) && Number.isFinite(testLng)) {
+      setPosition({ lat: testLat, lng: testLng })
+      setError(null)
+      setLoading(false)
+
+      if (!demoWalk) {
+        return undefined
+      }
+
+      let step = 0
+      const intervalId = window.setInterval(() => {
+        step += 1
+        setPosition({
+          lat: testLat + step * 0.000045,
+          lng: testLng + step * 0.000075,
+        })
+      }, 1200)
+
+      return () => window.clearInterval(intervalId)
+    }
+
+    if (demoWalk) {
+      setPosition({ lat: 55.9167, lng: 37.8547 })
+      setError(null)
+      setLoading(false)
+
+      let step = 0
+      const intervalId = window.setInterval(() => {
+        step += 1
+        setPosition({
+          lat: 55.9167 + step * 0.000045,
+          lng: 37.8547 + step * 0.000075,
+        })
+      }, 1200)
+
+      return () => window.clearInterval(intervalId)
+    }
+
     if (!navigator.geolocation) {
       setError('Геолокация не поддерживается вашим браузером')
       setLoading(false)

@@ -2,7 +2,7 @@ import { useRef, useState, type PointerEvent } from 'react'
 import type { Scooter, LatLng } from '../types'
 import { WhaleIcon } from './WhaleIcon'
 import { getScooterColor, getScooterColorLight } from '../utils/colors'
-import { batteryIcon, formatBattery, isChildModeOnly, walkingTime } from '../utils/scooter'
+import { formatBattery, isChildModeOnly, walkingTime } from '../utils/scooter'
 
 interface BottomSheetProps {
   scooter: Scooter
@@ -29,6 +29,29 @@ function openExternalRoute(app: 'google' | 'yandex' | '2gis', lat: number, lng: 
 function getRentalUrl(qr: string) {
   const qrNumber = qr.replace(/\D/g, '')
   return `https://k-s.app/qr/${qrNumber}`
+}
+
+function getBatteryColor(percent: number) {
+  if (percent >= 70) return '#20c933'
+  if (percent >= 30) return '#f4c542'
+  return '#ef4444'
+}
+
+function BatteryBadge({ percent }: { percent: number }) {
+  const safePercent = Math.max(0, Math.min(100, percent))
+  const fillWidth = Math.max(3, Math.round((safePercent / 100) * 23))
+  const fillColor = getBatteryColor(safePercent)
+
+  return (
+    <span className="battery-badge" aria-label={`Заряд ${safePercent}%`}>
+      <svg width="34" height="18" viewBox="0 0 34 18" aria-hidden="true">
+        <rect x="1" y="3" width="28" height="12" rx="3.5" fill="none" stroke="currentColor" strokeWidth="2" />
+        <rect x="30" y="7" width="3" height="4" rx="1.2" fill="currentColor" />
+        <rect x="4" y="6" width={fillWidth} height="6" rx="2" fill={fillColor} />
+      </svg>
+      <span>{formatBattery(safePercent)}</span>
+    </span>
+  )
 }
 
 export function BottomSheet({
@@ -102,20 +125,19 @@ export function BottomSheet({
           >
             <WhaleIcon color={color} size={32} />
           </div>
-          <div>
-            <div className="sheet-title">{scooter.qr}</div>
-            <div className="sheet-subtitle">{scooter.color} · {scooter.company.split('[')[0].trim()}</div>
+          <div className="sheet-heading">
+            <div className="sheet-title-row">
+              <div className="sheet-title">{scooter.qr}</div>
+              <BatteryBadge percent={scooter.fuelPercent} />
+            </div>
+            <div className="sheet-subtitle">
+              <span>{scooter.color}</span>
+            </div>
           </div>
         </div>
 
         {/* Инфо */}
-        <div className="sheet-info">
-          <div className="info-chip">
-            <span className="info-chip-label">Заряд</span>
-            <span className="info-chip-value">
-              {batteryIcon(scooter.fuelPercent)} {formatBattery(scooter.fuelPercent)}
-            </span>
-          </div>
+        <div className="sheet-info sheet-info-single">
           <div className="info-chip">
             <span className="info-chip-label">До кашалота</span>
             <span className="info-chip-value">
@@ -127,17 +149,9 @@ export function BottomSheet({
         {/* Предупреждение о детском режиме */}
         {childMode && (
           <div className="child-mode-warning">
-            <span>⚠️</span>
             <span>Доступен только детский режим.</span>
           </div>
         )}
-
-        {/* QR для аренды */}
-        <div className="qr-block">
-          <span className="qr-block-label">Главное для старта</span>
-          <strong>Отсканируйте QR-код на кашалоте</strong>
-          <span>{scooter.qr}</span>
-        </div>
 
         {/* Кнопки */}
         <div className="sheet-actions">
@@ -151,10 +165,6 @@ export function BottomSheet({
           >
             Открыть в картах
           </button>
-
-          <a className="btn-link" href={rentalUrl} target="_blank" rel="noreferrer">
-            Если QR-код поврежден, открыть оплату по номеру
-          </a>
 
           {showMapChoices && (
             <div className="nav-apps">
@@ -178,6 +188,19 @@ export function BottomSheet({
               </button>
             </div>
           )}
+        </div>
+
+        {/* QR для аренды */}
+        <div className="qr-block">
+          <span className="qr-block-label">Начать аренду просто</span>
+          <strong>Отсканируйте QR-код на кашалоте {scooter.qr.replace(/\s+/g, '')}</strong>
+        </div>
+
+        <div className="rental-help">
+          <span>Проблемы с кодом?</span>
+          <a href={rentalUrl} target="_blank" rel="noreferrer">
+            Перейти на страницу аренды
+          </a>
         </div>
       </div>
     </div>

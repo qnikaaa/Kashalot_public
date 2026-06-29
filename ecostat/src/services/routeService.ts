@@ -11,9 +11,26 @@ interface OsrmRouteResponse {
   }>
 }
 
-const OSRM_ROUTE_URL = 'https://router.project-osrm.org/route/v1/foot'
+const OSRM_ROUTE_URLS = [
+  'https://routing.openstreetmap.de/routed-foot/route/v1/foot',
+  'https://router.project-osrm.org/route/v1/foot',
+]
 
 export async function buildWalkingRoute(from: LatLng, to: LatLng): Promise<Route> {
+  let lastError: unknown = null
+
+  for (const routeUrl of OSRM_ROUTE_URLS) {
+    try {
+      return await fetchWalkingRoute(routeUrl, from, to)
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Не получилось построить маршрут')
+}
+
+async function fetchWalkingRoute(routeUrl: string, from: LatLng, to: LatLng): Promise<Route> {
   const coordinates = `${from.lng},${from.lat};${to.lng},${to.lat}`
   const params = new URLSearchParams({
     overview: 'full',
@@ -21,7 +38,7 @@ export async function buildWalkingRoute(from: LatLng, to: LatLng): Promise<Route
     steps: 'false',
   })
 
-  const response = await fetch(`${OSRM_ROUTE_URL}/${coordinates}?${params}`)
+  const response = await fetch(`${routeUrl}/${coordinates}?${params}`)
   if (!response.ok) {
     throw new Error('Не получилось построить маршрут')
   }
@@ -32,11 +49,29 @@ export async function buildWalkingRoute(from: LatLng, to: LatLng): Promise<Route
     throw new Error('Маршрут не найден')
   }
 
+  const routeCoordinates = osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }))
+
   return {
-    coordinates: osrmRoute.geometry.coordinates.map(([lng, lat]) => ({ lat, lng })),
+    coordinates: connectExactRoutePoints(routeCoordinates, from, to),
     distanceMeters: Math.round(osrmRoute.distance),
     durationSeconds: Math.round(osrmRoute.duration),
   }
+}
+
+function connectExactRoutePoints(routeCoordinates: LatLng[], from: LatLng, to: LatLng): LatLng[] {
+  const coordinates = [...routeCoordinates]
+  const first = coordinates[0]
+  const last = coordinates[coordinates.length - 1]
+
+  if (!first || calculateStraightDistance(from, first) > 5) {
+    coordinates.unshift(from)
+  }
+
+  if (!last || calculateStraightDistance(last, to) > 5) {
+    coordinates.push(to)
+  }
+
+  return coordinates
 }
 
 export function calculateStraightDistance(from: LatLng, to: LatLng): number {

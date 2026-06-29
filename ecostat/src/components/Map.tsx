@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import 'leaflet.markercluster'
+import 'leaflet-rotate'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { Scooter, LatLng, Route } from '../types'
 import { WhaleIcon } from './WhaleIcon'
@@ -18,19 +19,33 @@ interface MapProps {
   onVisibleCountChange?: (count: number) => void
 }
 
+type RotatableMap = L.Map & {
+  setBearing?: (bearing: number) => void
+}
+
 // Иконка пользователя
 const USER_ICON = L.divIcon({
-  html: `<div style="
-    width:18px;height:18px;
-    background:#4fd1c5;
-    border:3px solid white;
-    border-radius:50%;
-    box-shadow:0 0 0 4px rgba(79,209,197,0.3);
-  "></div>`,
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
+  html: '<div class="user-location-marker"><span></span></div>',
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
   className: '',
 })
+
+const ROUTE_START_ICON = L.divIcon({
+  html: '<div class="route-start-marker"><span>Вы тут</span></div>',
+  iconSize: [74, 34],
+  iconAnchor: [37, 17],
+  className: '',
+})
+
+function createRouteArrowIcon(bearing: number) {
+  return L.divIcon({
+    html: `<div class="route-arrow-marker" style="transform: rotate(${bearing}deg)"><span></span></div>`,
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
+    className: '',
+  })
+}
 
 export function Map({
   scooters,
@@ -45,18 +60,23 @@ export function Map({
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null)
   const userMarkerRef = useRef<L.Marker | null>(null)
   const routeLayerRef = useRef<L.Polyline | null>(null)
+  const routeStartMarkerRef = useRef<L.Marker | null>(null)
+  const routeFitEndKeyRef = useRef<string | null>(null)
+  const previousRouteStartRef = useRef<LatLng | null>(null)
+  const routeIsMovingRef = useRef(false)
   const markersRef = useRef<globalThis.Map<number, L.Marker>>(new globalThis.Map())
   const initialLocationFitRef = useRef(false)
+  const initialNearestFitRef = useRef(false)
 
   const updateVisibleCount = useCallback(() => {
     const map = mapRef.current
-    if (!map || !onVisibleCountChange) return
+    if (!map) return
 
     const bounds = map.getBounds()
-    const count = scooters.filter((scooter) =>
+    const visibleScooters = scooters.filter((scooter) =>
       bounds.contains([scooter.latitude, scooter.longitude])
-    ).length
-    onVisibleCountChange(count)
+    )
+    onVisibleCountChange?.(visibleScooters.length)
   }, [scooters, onVisibleCountChange])
 
   // Инициализация карты
@@ -64,14 +84,17 @@ export function Map({
     if (!containerRef.current || mapRef.current) return
 
     const map = L.map(containerRef.current, {
-      center: [55.75, 37.61], // Москва по умолчанию
+      center: [55.75, 37.61],
       zoom: 13,
       zoomControl: false,
       attributionControl: false,
       touchZoom: true,
+      touchRotate: true,
+      shiftKeyRotate: true,
+      rotate: true,
       scrollWheelZoom: true,
       doubleClickZoom: true,
-    })
+    } as L.MapOptions & { rotate: boolean; touchRotate: boolean; shiftKeyRotate: boolean })
 
     L.control.zoom({ position: 'bottomright' }).addTo(map)
 
@@ -102,6 +125,8 @@ export function Map({
     map.addLayer(cluster)
     mapRef.current = map
     clusterRef.current = cluster
+    initialLocationFitRef.current = false
+    initialNearestFitRef.current = false
 
     return () => { map.remove(); mapRef.current = null }
   }, [])
@@ -177,30 +202,141 @@ export function Map({
 
     if (!initialLocationFitRef.current) {
       initialLocationFitRef.current = true
-      mapRef.current.setView([userPosition.lat, userPosition.lng], 16, { animate: true })
+      mapRef.current.setView([userPosition.lat, userPosition.lng], 16, { animate: false })
     }
+  }, [userPosition])
+
+  // Первый экран: пользователь + ближайший кашалот в одной области видимости.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !userPosition || scooters.length === 0 || initialNearestFitRef.current) return
+
+    const nearestScooter = scooters.reduce((nearest, scooter) => {
+      const currentDistance = getSquaredDistance(userPosition, {
+        lat: scooter.latitude,
+        lng: scooter.longitude,
+      })
+      const nearestDistance = getSquaredDistance(userPosition, {
+        lat: nearest.latitude,
+        lng: nearest.longitude,
+      })
+
+      return currentDistance < nearestDistance ? scooter : nearest
+    }, scooters[0])
+
+    initialNearestFitRef.current = true
+    const bounds = L.latLngBounds([
+      [userPosition.lat, userPosition.lng],
+      [nearestScooter.latitude, nearestScooter.longitude],
+    ])
+
+    map.fitBounds(bounds, {
+      paddingTopLeft: [72, 96],
+      paddingBottomRight: [72, 260],
+      maxZoom: 16,
+      animate: false,
+    })
+  }, [userPosition, scooters])
+
+  // Компас: вернуть север вверх и показать пользователя.
+  useEffect(() => {
+    const resetBearing = () => {
+      const map = mapRef.current as RotatableMap | null
+      if (!map || !userPosition) return
+
+      map.setBearing?.(0)
+      map.setView([userPosition.lat, userPosition.lng], Math.max(map.getZoom(), 16), {
+        animate: true,
+        duration: 0.35,
+      })
+    }
+
+    window.addEventListener('reset-map-bearing', resetBearing)
+    return () => window.removeEventListener('reset-map-bearing', resetBearing)
   }, [userPosition])
 
   // Маршрут
   useEffect(() => {
     if (!mapRef.current) return
 
-    if (routeLayerRef.current) {
-      routeLayerRef.current.remove()
-      routeLayerRef.current = null
+    if (!route || route.coordinates.length <= 1) {
+      if (routeLayerRef.current) {
+        routeLayerRef.current.remove()
+        routeLayerRef.current = null
+      }
+      if (routeStartMarkerRef.current) {
+        routeStartMarkerRef.current.remove()
+        routeStartMarkerRef.current = null
+      }
+      routeFitEndKeyRef.current = null
+      previousRouteStartRef.current = null
+      routeIsMovingRef.current = false
+      return
     }
 
-    if (route && route.coordinates.length > 1) {
-      const latlngs = route.coordinates.map((c) => [c.lat, c.lng] as L.LatLngTuple)
+    const latlngs = route.coordinates.map((c) => [c.lat, c.lng] as L.LatLngTuple)
+    const start = route.coordinates[0]
+    const end = route.coordinates[route.coordinates.length - 1]
+    const endKey = `${end.lat.toFixed(6)},${end.lng.toFixed(6)}`
+    const shouldFitRoute = routeFitEndKeyRef.current !== endKey
+    const previousStart = previousRouteStartRef.current
+    const movedMeters = previousStart ? getApproxDistanceMeters(previousStart, start) : 0
+    routeIsMovingRef.current = routeIsMovingRef.current || movedMeters > 2
+    previousRouteStartRef.current = start
+    const startIcon = routeIsMovingRef.current && route.coordinates[1]
+      ? createRouteArrowIcon(getBearing(start, route.coordinates[1]))
+      : ROUTE_START_ICON
+
+    if (routeLayerRef.current) {
+      routeLayerRef.current.setLatLngs(latlngs)
+    } else {
       routeLayerRef.current = L.polyline(latlngs, {
         color: '#4fd1c5',
         weight: 5,
         opacity: 0.95,
       }).addTo(mapRef.current)
+    }
 
+    if (routeStartMarkerRef.current) {
+      routeStartMarkerRef.current.setLatLng([start.lat, start.lng])
+      routeStartMarkerRef.current.setIcon(startIcon)
+    } else {
+      routeStartMarkerRef.current = L.marker([start.lat, start.lng], {
+        icon: startIcon,
+        interactive: false,
+        zIndexOffset: 1100,
+      }).addTo(mapRef.current)
+    }
+
+    if (shouldFitRoute) {
+      routeFitEndKeyRef.current = endKey
       mapRef.current.fitBounds(routeLayerRef.current.getBounds(), { padding: [60, 60] })
     }
   }, [route])
 
   return <div ref={containerRef} className="map-container" />
+}
+
+function getSquaredDistance(from: LatLng, to: LatLng) {
+  const latDiff = to.lat - from.lat
+  const lngDiff = to.lng - from.lng
+  return latDiff * latDiff + lngDiff * lngDiff
+}
+
+function getApproxDistanceMeters(from: LatLng, to: LatLng) {
+  const latMeters = (to.lat - from.lat) * 111_320
+  const lngMeters = (to.lng - from.lng) * 111_320 * Math.cos((from.lat * Math.PI) / 180)
+  return Math.sqrt(latMeters * latMeters + lngMeters * lngMeters)
+}
+
+function getBearing(from: LatLng, to: LatLng) {
+  const fromLat = (from.lat * Math.PI) / 180
+  const toLat = (to.lat * Math.PI) / 180
+  const dLng = ((to.lng - from.lng) * Math.PI) / 180
+  const y = Math.sin(dLng) * Math.cos(toLat)
+  const x =
+    Math.cos(fromLat) * Math.sin(toLat) -
+    Math.sin(fromLat) * Math.cos(toLat) * Math.cos(dLng)
+
+  return (Math.atan2(y, x) * 180) / Math.PI
 }
