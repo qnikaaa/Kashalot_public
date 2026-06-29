@@ -1,4 +1,4 @@
-import { getScootersWithCache } from '../server/adminProxy.js'
+import { getScootersWithCache } from '../server/availableCars.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -11,9 +11,9 @@ export default async function handler(req, res) {
     res.setHeader('X-Cache', cacheStatus)
     res.status(200).json(data)
   } catch (error) {
-    console.error('Failed to fetch scooters from admin:', error.message)
+    console.error('Failed to fetch scooters:', error.message)
     res.status(502).json({
-      error: 'Failed to fetch scooters from admin',
+      error: 'Failed to fetch scooters',
       details: error.message,
       diagnostics: error.diagnostics,
     })

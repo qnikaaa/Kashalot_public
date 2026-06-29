@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 import express from 'express'
-import { getCacheInfo, getScootersWithCache, inspectColumns } from './adminProxy.js'
+import { getCacheInfo, getScootersWithCache } from './availableCars.js'
 
 dotenv.config({ path: new URL('.env', import.meta.url) })
 
@@ -25,27 +25,15 @@ app.get('/api/health', (_req, res) => {
   })
 })
 
-app.get('/api/debug/columns', async (_req, res) => {
-  try {
-    res.json(await inspectColumns())
-  } catch (error) {
-    res.status(502).json({
-      error: 'Failed to inspect DataTables columns',
-      details: error.message,
-      diagnostics: error.diagnostics,
-    })
-  }
-})
-
 app.get('/api/scooters', async (_req, res) => {
   try {
     const { data, cacheStatus } = await getScootersWithCache()
     res.setHeader('X-Cache', cacheStatus)
     res.json(data)
   } catch (error) {
-    console.error('Failed to fetch scooters from admin:', error.message)
+    console.error('Failed to fetch scooters:', error.message)
     res.status(502).json({
-      error: 'Failed to fetch scooters from admin',
+      error: 'Failed to fetch scooters',
       details: error.message,
       diagnostics: error.diagnostics,
     })
@@ -53,5 +41,5 @@ app.get('/api/scooters', async (_req, res) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`Backend proxy listening on http://127.0.0.1:${PORT}`)
+  console.log(`Backend API server listening on http://127.0.0.1:${PORT}`)
 })

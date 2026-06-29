@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { Map, buildStraightRoute } from './components/Map'
 import { BottomSheet } from './components/BottomSheet'
-import { WhaleIcon } from './components/WhaleIcon'
 import { useScooters } from './hooks/useScooters'
 import { useGeolocation } from './hooks/useGeolocation'
 import type { Scooter, Route } from './types'
@@ -27,6 +26,7 @@ export default function App() {
   const [notification, setNotification] = useState<string | null>(null)
   const [locating, setLocating] = useState(false)
   const [visibleScooterCount, setVisibleScooterCount] = useState<number | null>(null)
+  const [sheetCollapsed, setSheetCollapsed] = useState(false)
 
   // Показать уведомление на 4 секунды
   const showNotification = useCallback((msg: string) => {
@@ -38,6 +38,7 @@ export default function App() {
   const handleScooterClick = useCallback((scooter: Scooter) => {
     setSelectedScooter(scooter)
     setRoute(null) // сбросить предыдущий маршрут
+    setSheetCollapsed(false)
   }, [])
 
   // Построить маршрут
@@ -52,12 +53,14 @@ export default function App() {
       lng: selectedScooter.longitude,
     })
     setRoute(r)
+    setSheetCollapsed(true)
   }, [selectedScooter, userPosition, showNotification])
 
   // Закрыть карточку
   const handleClose = useCallback(() => {
     setSelectedScooter(null)
     setRoute(null)
+    setSheetCollapsed(false)
   }, [])
 
   // Кнопка "найти меня"
@@ -114,7 +117,7 @@ export default function App() {
       {/* Верхняя панель */}
       <div className="top-bar">
         <div className="app-logo">
-          <WhaleIcon color="#4fd1c5" size={22} />
+          <img src="/logo.png" alt="" />
           <span>Экоскат</span>
         </div>
         <div className="scooter-count">
@@ -146,8 +149,11 @@ export default function App() {
           scooter={selectedScooter}
           userPosition={userPosition}
           distanceMeters={distanceToSelected}
+          collapsed={sheetCollapsed}
           onClose={handleClose}
           onRoute={handleRoute}
+          onCollapse={() => setSheetCollapsed(true)}
+          onExpand={() => setSheetCollapsed(false)}
         />
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState, type PointerEvent } from 'react'
 import type { Scooter, LatLng } from '../types'
 import { WhaleIcon } from './WhaleIcon'
 import { getScooterColor, getScooterColorLight } from '../utils/colors'
@@ -8,8 +8,11 @@ interface BottomSheetProps {
   scooter: Scooter
   userPosition: LatLng | null
   distanceMeters: number | null
+  collapsed: boolean
   onClose: () => void
   onRoute: () => void
+  onCollapse: () => void
+  onExpand: () => void
 }
 
 /** Открывает маршрут во внешнем приложении */
@@ -27,17 +30,66 @@ function getRentalUrl(qr: string) {
   return `https://k-s.app/qr/${qrNumber}`
 }
 
-export function BottomSheet({ scooter, distanceMeters, onClose, onRoute }: BottomSheetProps) {
+export function BottomSheet({
+  scooter,
+  distanceMeters,
+  collapsed,
+  onClose,
+  onRoute,
+  onCollapse,
+  onExpand,
+}: BottomSheetProps) {
   const color = getScooterColor(scooter.color)
   const colorLight = getScooterColorLight(scooter.color)
   const childMode = isChildModeOnly(scooter)
   const [showMapChoices, setShowMapChoices] = useState(false)
+  const [dragY, setDragY] = useState(0)
+  const dragStartY = useRef<number | null>(null)
   const rentalUrl = getRentalUrl(scooter.qr)
+  const distanceText = distanceMeters !== null ? walkingTime(distanceMeters) : '—'
+
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    dragStartY.current = event.clientY
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (dragStartY.current === null) return
+    const nextDragY = Math.max(0, event.clientY - dragStartY.current)
+    setDragY(nextDragY)
+  }
+
+  const finishDrag = () => {
+    if (dragY > 80) {
+      onCollapse()
+    }
+    dragStartY.current = null
+    setDragY(0)
+  }
+
+  if (collapsed) {
+    return (
+      <div className="bottom-sheet-overlay">
+        <button className="route-pill" onClick={onExpand} aria-label="Развернуть карточку">
+          <span className="route-pill-title">{scooter.qr}</span>
+          <span className="route-pill-meta">{distanceText} до кашалота</span>
+          <span className="route-pill-action">Развернуть</span>
+        </button>
+      </div>
+    )
+  }
 
   return (
-    <div className="bottom-sheet-overlay">
-      <div className="bottom-sheet">
-        <div className="sheet-handle" />
+      <div className="bottom-sheet-overlay">
+      <div
+        className="bottom-sheet"
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+        style={{ transform: dragY ? `translateY(${dragY}px)` : undefined }}
+      >
+        <button className="sheet-handle" onClick={onCollapse} aria-label="Свернуть карточку" />
         <button className="sheet-close" onClick={onClose} aria-label="Закрыть">✕</button>
 
         {/* Заголовок */}
@@ -65,7 +117,7 @@ export function BottomSheet({ scooter, distanceMeters, onClose, onRoute }: Botto
           <div className="info-chip">
             <span className="info-chip-label">До кашалота</span>
             <span className="info-chip-value">
-              {distanceMeters !== null ? walkingTime(distanceMeters) : '—'}
+              {distanceText}
             </span>
           </div>
         </div>

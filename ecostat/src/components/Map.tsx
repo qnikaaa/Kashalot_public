@@ -75,10 +75,10 @@ export function Map({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map)
 
-    // Светлая карта без ключей доступа, чтобы Vercel не показывал 401 на тайлах.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 20,
-      attribution: '© OpenStreetMap contributors © CARTO',
+    // Контрастная карта с локальными подписями, чаще показывает названия кириллицей.
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors',
     }).addTo(map)
 
     // Кластер маркеров

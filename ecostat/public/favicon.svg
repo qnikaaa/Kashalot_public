@@ -1,3 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <text y="26" font-size="26">🐋</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <g fill="none" stroke="#E53935" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M31 30 L18 26 C9 23 8 17 14 11 L22 4 C28 0 33 3 35 11 L39 25"/>
+    <path d="M33 30 L45 18 C52 11 59 14 60 22 L61 31 C61 38 56 42 48 40 L35 36"/>
+    <path d="M33 34 L46 38 C55 41 56 47 50 53 L42 60 C36 64 31 61 29 53 L25 39"/>
+    <path d="M31 34 L19 46 C12 53 5 50 4 42 L3 33 C3 26 8 22 16 24 L29 28"/>
+    <path d="M32 31 L42 5"/>
+    <path d="M32 33 L22 59"/>
+  </g>
 </svg>
