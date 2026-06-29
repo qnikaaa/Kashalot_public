@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react'
-import { Map, buildStraightRoute } from './components/Map'
+import { Map } from './components/Map'
 import { BottomSheet } from './components/BottomSheet'
 import { useScooters } from './hooks/useScooters'
 import { useGeolocation } from './hooks/useGeolocation'
+import { buildWalkingRoute, calculateStraightDistance } from './services/routeService'
 import type { Scooter, Route } from './types'
 import './index.css'
 
@@ -27,6 +28,7 @@ export default function App() {
   const [locating, setLocating] = useState(false)
   const [visibleScooterCount, setVisibleScooterCount] = useState<number | null>(null)
   const [sheetCollapsed, setSheetCollapsed] = useState(false)
+  const [routeLoading, setRouteLoading] = useState(false)
 
   // Показать уведомление на 4 секунды
   const showNotification = useCallback((msg: string) => {
@@ -42,18 +44,26 @@ export default function App() {
   }, [])
 
   // Построить маршрут
-  const handleRoute = useCallback(() => {
+  const handleRoute = useCallback(async () => {
     if (!selectedScooter) return
     if (!userPosition) {
       showNotification('Разрешите доступ к геолокации, чтобы построить маршрут')
       return
     }
-    const r = buildStraightRoute(userPosition, {
-      lat: selectedScooter.latitude,
-      lng: selectedScooter.longitude,
-    })
-    setRoute(r)
-    setSheetCollapsed(true)
+
+    setRouteLoading(true)
+    try {
+      const r = await buildWalkingRoute(userPosition, {
+        lat: selectedScooter.latitude,
+        lng: selectedScooter.longitude,
+      })
+      setRoute(r)
+      setSheetCollapsed(true)
+    } catch {
+      showNotification('Не получилось построить маршрут. Попробуйте открыть внешние карты')
+    } finally {
+      setRouteLoading(false)
+    }
   }, [selectedScooter, userPosition, showNotification])
 
   // Закрыть карточку
@@ -78,7 +88,7 @@ export default function App() {
 
   // Расстояние до выбранного кашалота
   const distanceToSelected = selectedScooter && userPosition
-    ? buildStraightRoute(userPosition, { lat: selectedScooter.latitude, lng: selectedScooter.longitude }).distanceMeters
+    ? calculateStraightDistance(userPosition, { lat: selectedScooter.latitude, lng: selectedScooter.longitude })
     : null
 
   // ── Экран загрузки ──────────────────────────────────────
@@ -150,6 +160,7 @@ export default function App() {
           userPosition={userPosition}
           distanceMeters={distanceToSelected}
           collapsed={sheetCollapsed}
+          routeLoading={routeLoading}
           onClose={handleClose}
           onRoute={handleRoute}
           onCollapse={() => setSheetCollapsed(true)}

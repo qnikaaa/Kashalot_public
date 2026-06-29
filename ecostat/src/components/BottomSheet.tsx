@@ -9,6 +9,7 @@ interface BottomSheetProps {
   userPosition: LatLng | null
   distanceMeters: number | null
   collapsed: boolean
+  routeLoading: boolean
   onClose: () => void
   onRoute: () => void
   onCollapse: () => void
@@ -34,6 +35,7 @@ export function BottomSheet({
   scooter,
   distanceMeters,
   collapsed,
+  routeLoading,
   onClose,
   onRoute,
   onCollapse,
@@ -139,8 +141,8 @@ export function BottomSheet({
 
         {/* Кнопки */}
         <div className="sheet-actions">
-          <button className="btn-primary" onClick={onRoute}>
-            🗺 Построить маршрут
+          <button className="btn-primary" onClick={onRoute} disabled={routeLoading}>
+            {routeLoading ? 'Строим маршрут...' : '🗺 Построить маршрут'}
           </button>
 
           <button

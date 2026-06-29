@@ -194,9 +194,8 @@ export function Map({
       const latlngs = route.coordinates.map((c) => [c.lat, c.lng] as L.LatLngTuple)
       routeLayerRef.current = L.polyline(latlngs, {
         color: '#4fd1c5',
-        weight: 4,
-        opacity: 0.85,
-        dashArray: '8, 6',
+        weight: 5,
+        opacity: 0.95,
       }).addTo(mapRef.current)
 
       mapRef.current.fitBounds(routeLayerRef.current.getBounds(), { padding: [60, 60] })
@@ -204,24 +203,4 @@ export function Map({
   }, [route])
 
   return <div ref={containerRef} className="map-container" />
-}
-
-/** Вычисляет прямой маршрут между двумя точками (прямая линия) */
-export function buildStraightRoute(from: LatLng, to: LatLng): Route {
-  // Расстояние по формуле Гаверсинуса
-  const R = 6371000
-  const dLat = ((to.lat - from.lat) * Math.PI) / 180
-  const dLng = ((to.lng - from.lng) * Math.PI) / 180
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((from.lat * Math.PI) / 180) *
-      Math.cos((to.lat * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2
-  const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-
-  return {
-    coordinates: [from, to],
-    distanceMeters: Math.round(distance),
-    durationSeconds: Math.round(distance / 1.4), // 1.4 м/с — средняя скорость пешехода
-  }
 }
